@@ -4,21 +4,25 @@ This project includes a small local proxy so you do not have to store the API ke
 
 Steps to run locally:
 
-1. Copy `.env.example` to `.env` and set your key:
+
+1. Copy `.env.example` to `.env` and set your key and model:
 
    - On Windows PowerShell (current session):
 
    ```powershell
    $env:GOOGLE_API_KEY = "sk_your_key_here"
+   $env:MODEL = "models/gemini-2.5-flash-lite"
    ```
 
    Or create a `.env` file in the project root with:
 
    ```text
    GOOGLE_API_KEY=your_real_key_here
-   MODEL=gemini-1.5-flash
+   MODEL=models/gemini-2.5-flash-lite
    PORT=3000
    ```
+
+   The recommended default is `models/gemini-2.5-flash-lite` for best cost/speed. For higher quality, use `models/gemini-2.5-pro`.
 
 2. Install dependencies and start the proxy server:
 

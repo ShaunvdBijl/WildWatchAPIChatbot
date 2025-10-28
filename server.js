@@ -1,7 +1,9 @@
-const express = require('express');
-const cors = require('cors');
-const fetch = require('node-fetch');
-require('dotenv').config();
+import express from 'express';
+import cors from 'cors';
+import fetch from 'node-fetch';
+import dotenv from 'dotenv';
+
+dotenv.config();
 
 const app = express();
 app.use(cors());
@@ -34,6 +36,25 @@ app.post('/api/generate', async (req, res) => {
     console.error('Proxy error', err);
     res.status(500).json({ error: String(err) });
   }
+});
+
+// List available models from the upstream API so users can pick a supported model
+app.get('/api/models', async (req, res) => {
+  try {
+    console.log('Received request: GET /api/models');
+    const url = `https://generativelanguage.googleapis.com/v1beta/models?key=${process.env.GOOGLE_API_KEY}`;
+    const r = await fetch(url, { method: 'GET' });
+    const data = await r.json();
+    res.json(data);
+  } catch (err) {
+    console.error('List models error', err);
+    res.status(500).json({ error: String(err) });
+  }
+});
+
+// Simple root/health endpoint to confirm the proxy is running
+app.get('/', (req, res) => {
+  res.send('WildWatch proxy running. Available: GET /api/models, POST /api/generate');
 });
 
 app.listen(PORT, () => console.log(`Server listening on http://localhost:${PORT}`));

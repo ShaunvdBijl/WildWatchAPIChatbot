@@ -1,6 +1,9 @@
 // Removed hard-coded API key. The frontend now calls a local proxy at /api/generate
 // which forwards requests to the remote API using a server-side secret.
-const MODEL = "gemini-1.5-flash";
+const MODEL = "gemini-2.5-flash-lite";
+import dotenv from 'dotenv';
+dotenv.config();
+
 
 const chatBox = document.getElementById("chat-box");
 const sendBtn = document.getElementById("send-btn");
@@ -17,7 +20,13 @@ async function sendMessage() {
 
   // Call the local proxy instead of embedding the API key in the client
   try {
-    const response = await fetch('/api/generate', {
+    // If the page is opened via file:// (or not served from the proxy),
+    // point at the local proxy on port 3000. If the frontend is hosted
+    // from the same origin as the proxy, API_BASE will be '' and the
+    // request will be relative to the same origin.
+    const API_BASE = (location.protocol === 'file:' || !location.hostname) ? 'http://localhost:3000' : '';
+
+    const response = await fetch(`${API_BASE}/api/generate`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ text, model: MODEL })
