@@ -21,7 +21,7 @@ if (!process.env.GOOGLE_API_KEY) {
 }
 
 app.post('/api/generate', async (req, res) => {
-  const { text, model } = req.body;
+  const { text, model, context } = req.body;
   // Normalize model names so callers may pass either
   // 'models/gemini-2.5-flash-lite' or 'gemini-2.5-flash-lite'
   const normalizeModel = (m) => (m || '').replace(/^models\//, '');
@@ -29,11 +29,25 @@ app.post('/api/generate', async (req, res) => {
   if (!text) return res.status(400).json({ error: 'missing `text` in body' });
 
   try {
+    // Log the request for debugging
+    console.log('Request:', { text, context: context?.slice(0, 100) + '...' });
+
     const url = `${API_BASE_URL}/models/${usedModel}:generateContent?key=${process.env.GOOGLE_API_KEY}`;
+    
+    // Prepare the message for the model
+    let prompt = text;
+    if (context) {
+      prompt = `${context}\n\nUser message: ${text}\n\nResponse:`;
+    }
+
     const r = await fetch(url, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ contents: [{ parts: [{ text }] }] })
+      body: JSON.stringify({
+        contents: [{
+          parts: [{ text: prompt }]
+        }]
+      })
     });
 
     const data = await r.json();

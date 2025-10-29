@@ -3,16 +3,140 @@
 // testing, set this to a model id (for example: 'models/gemini-2.5-flash-lite').
 const MODEL = null;
 
+// Helper function to get API base URL
+function getApiBase() {
+  let API_BASE = '';
+  if (location.protocol === 'file:' || !location.hostname) {
+    API_BASE = 'http://localhost:3000';
+  } else {
+    const isLocalhost = location.hostname === 'localhost' || location.hostname === '127.0.0.1';
+    if (isLocalhost && location.port && location.port !== '3000') {
+      API_BASE = 'http://localhost:3000';
+    }
+  }
+  return API_BASE;
+}
+
+// System messages to guide the AI's behavior
+const SYSTEM_MESSAGES = {
+  general: "You are the BC WildWatch assistant, helping users with wildlife-related questions and concerns on campus. Be informative and safety-conscious.",
+  safety: `You are the BC WildWatch safety advisor. Provide clear, structured wildlife safety information in this format:
+1. General guidelines
+2. Specific do's and don'ts
+3. Prevention tips
+4. Emergency contact information
+
+Be clear, practical, and focused on campus safety.`,
+  emergency: `You are the BC WildWatch emergency response advisor. This is an urgent situation. Respond with:
+1. IMMEDIATE ACTIONS (what to do right now)
+2. SAFETY INSTRUCTIONS (stay/leave, keep distance, etc.)
+3. CONTACT INFO (who to call - security, emergency services)
+4. FOLLOW-UP (what to do after the immediate situation)
+
+Use clear, direct language. Prioritize human safety.`,
+  report: `You are the BC WildWatch incident response assistant. Your role is to help handle wildlife incidents on campus.
+
+For this incident report, please provide a response in this format:
+1. Acknowledge receipt: "Thank you for reporting this incident."
+2. Safety first: If there's any immediate danger, provide urgent safety instructions.
+3. Specific guidance: Based on the incident type and animal, give relevant advice.
+4. Next steps: List clear actions (e.g., "Please notify campus security at [number]", "Avoid the area", etc.)
+5. Follow-up: Ask for any critical missing information.
+
+Remember:
+- Be professional but reassuring
+- Prioritize human safety
+- Be specific about actions to take
+- Give clear contact information when needed`
+};
 
 const chatBox = document.getElementById("chat-box");
 const sendBtn = document.getElementById("send-btn");
 const userInput = document.getElementById("user-input");
+const contextSelector = document.getElementById("context-selector");
+const quickActions = document.querySelectorAll(".action-btn");
+const incidentForm = document.getElementById("incident-form");
+const submitIncident = document.getElementById("submit-incident");
+const cancelReport = document.getElementById("cancel-report");
 
+// Event Listeners
 sendBtn.addEventListener("click", sendMessage);
+quickActions.forEach(btn => btn.addEventListener("click", handleQuickAction));
+submitIncident.addEventListener("click", submitIncidentReport);
+cancelReport.addEventListener("click", () => incidentForm.classList.add("hidden"));
+
+async function handleQuickAction(event) {
+  const action = event.target.dataset.action;
+  switch(action) {
+    case "report":
+      incidentForm.classList.remove("hidden");
+      break;
+    case "safety":
+      userInput.value = "What are the general safety guidelines for wildlife encounters on campus?";
+      contextSelector.value = "safety";
+      sendMessage();
+      break;
+    case "emergency":
+      userInput.value = "I need immediate assistance with a wildlife situation.";
+      contextSelector.value = "emergency";
+      sendMessage();
+      break;
+  }
+}
+
+async function submitIncidentReport() {
+  const type = document.getElementById("incident-type").value;
+  const location = document.getElementById("incident-location").value;
+  const details = document.getElementById("incident-details").value;
+  
+  if (!type || !location || !details) {
+    appendMessage("bot", "Please fill in all fields in the incident report.");
+    return;
+  }
+
+  // Create a structured report object
+  const reportData = {
+    type,
+    location,
+    details,
+    timestamp: new Date().toISOString()
+  };
+
+  appendMessage("user", `📝 Reporting ${type} incident at ${location}`);
+
+  try {
+    const API_BASE = getApiBase(); // Reuse the API base URL logic
+    const response = await fetch(`${API_BASE}/api/generate`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        text: `Please provide guidance for this wildlife incident report:
+Type of incident: ${type}
+Location: ${location}
+Details: ${details}`,
+        context: SYSTEM_MESSAGES.report
+      })
+    });
+
+    if (!response.ok) {
+      throw new Error(await response.text());
+    }
+
+    const data = await response.json();
+    appendMessage('bot', data.text || "Sorry, I couldn't process the report. Please try again.");
+
+  } catch (err) {
+    appendMessage('bot', 'Error submitting report: ' + err.message);
+  }
+
+  incidentForm.classList.add("hidden");
+}
 
 async function sendMessage() {
   const text = userInput.value.trim();
   if (!text) return;
+
+  const context = contextSelector.value;
 
   appendMessage("user", text);
   userInput.value = "";
@@ -25,23 +149,14 @@ async function sendMessage() {
     // we also route API calls to the backend at http://localhost:3000.
     // In production (same origin) API_BASE should be '' so requests are
     // relative to the host serving the frontend.
-    let API_BASE = '';
-    // If opened from the filesystem or no hostname, target local backend
-    if (location.protocol === 'file:' || !location.hostname) {
-      API_BASE = 'http://localhost:3000';
-    } else {
-      // If the frontend is running on a different local port (Live Server
-      // commonly uses 127.0.0.1:5500 or localhost:5500), route API calls to
-      // the backend at http://localhost:3000. This covers both 'localhost'
-      // and '127.0.0.1' hostnames.
-      const isLocalhost = location.hostname === 'localhost' || location.hostname === '127.0.0.1';
-      if (isLocalhost && location.port && location.port !== '3000') {
-        API_BASE = 'http://localhost:3000';
-      }
-    }
+    const API_BASE = getApiBase();
 
-    // Build request body and only include `model` if the client overrides it.
-    const bodyObj = { text };
+    // Build request body with context and system message
+    const systemMessage = SYSTEM_MESSAGES[context] || SYSTEM_MESSAGES.general;
+    const bodyObj = {
+      text,
+      context: systemMessage
+    };
     if (MODEL) bodyObj.model = MODEL;
 
     const response = await fetch(`${API_BASE}/api/generate`, {
