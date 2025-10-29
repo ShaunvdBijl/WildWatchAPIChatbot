@@ -9,8 +9,34 @@
 <body>
   <div class="chat-container">
     <h2>🐾 BC WildWatch Chatbot</h2>
+    <div class="quick-actions">
+      <button class="action-btn" data-action="report">Report Wildlife Incident</button>
+      <button class="action-btn" data-action="safety">Get Safety Tips</button>
+      <button class="action-btn" data-action="emergency">Emergency Actions</button>
+    </div>
+    <div id="incident-form" class="hidden">
+      <h3>Report Wildlife Incident</h3>
+      <select id="incident-type">
+        <option value="">Select Incident Type...</option>
+        <option value="sighting">Animal Sighting</option>
+        <option value="encounter">Close Encounter</option>
+        <option value="injury">Injury/Damage</option>
+        <option value="other">Other</option>
+      </select>
+      <input type="text" id="incident-location" placeholder="Location on campus..." />
+      <textarea id="incident-details" placeholder="Describe what happened..."></textarea>
+      <button id="submit-incident">Submit Report</button>
+      <button id="cancel-report">Cancel</button>
+    </div>
     <div id="chat-box"></div>
-    <input type="text" id="user-input" placeholder="Ask about an animal or report an incident..." />
+    <div class="input-area">
+      <input type="text" id="user-input" placeholder="Ask about an animal or report an incident..." />
+      <select id="context-selector">
+        <option value="general">General Question</option>
+        <option value="safety">Safety Information</option>
+        <option value="emergency">Emergency</option>
+      </select>
+    </div>
     <button id="send-btn">Send</button>
   </div>
 
