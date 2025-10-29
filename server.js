@@ -9,20 +9,27 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
+// Server configuration from environment variables
 const PORT = process.env.PORT || 3000;
-const MODEL = process.env.MODEL || 'gemini-1.5-flash';
+const MODEL = process.env.MODEL || 'models/gemini-2.5-flash-lite';
+const API_BASE_URL = 'https://generativelanguage.googleapis.com/v1beta';
 
+// Validate required environment variables
 if (!process.env.GOOGLE_API_KEY) {
-  console.warn('Warning: GOOGLE_API_KEY not set. Create a .env file (see .env.example)');
+  console.error('Error: GOOGLE_API_KEY environment variable is required');
+  process.exit(1);
 }
 
 app.post('/api/generate', async (req, res) => {
   const { text, model } = req.body;
-  const usedModel = model || MODEL;
+  // Normalize model names so callers may pass either
+  // 'models/gemini-2.5-flash-lite' or 'gemini-2.5-flash-lite'
+  const normalizeModel = (m) => (m || '').replace(/^models\//, '');
+  const usedModel = normalizeModel(model || MODEL);
   if (!text) return res.status(400).json({ error: 'missing `text` in body' });
 
   try {
-    const url = `https://generativelanguage.googleapis.com/v1beta/models/${usedModel}:generateContent?key=${process.env.GOOGLE_API_KEY}`;
+    const url = `${API_BASE_URL}/models/${usedModel}:generateContent?key=${process.env.GOOGLE_API_KEY}`;
     const r = await fetch(url, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -42,7 +49,7 @@ app.post('/api/generate', async (req, res) => {
 app.get('/api/models', async (req, res) => {
   try {
     console.log('Received request: GET /api/models');
-    const url = `https://generativelanguage.googleapis.com/v1beta/models?key=${process.env.GOOGLE_API_KEY}`;
+    const url = `${API_BASE_URL}/models?key=${process.env.GOOGLE_API_KEY}`;
     const r = await fetch(url, { method: 'GET' });
     const data = await r.json();
     res.json(data);
