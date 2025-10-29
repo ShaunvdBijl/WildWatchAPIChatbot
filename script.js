@@ -26,14 +26,34 @@ const SYSTEM_MESSAGES = {
 3. Prevention tips
 4. Emergency contact information
 
+Formatting rules:
+- Friendly introduction
+- Use normal sentences with full stops
+- Use line breaks between sections (\n)
+- Do not use symbols like *, **, #, or -
+- Do not use Markdown
+- Make use of bullet points for lists, use this •
+- Do not over use capitalization
+- Always use numbers to indicate headings
+
 Be clear, practical, and focused on campus safety.`,
-  emergency: `You are the BC WildWatch emergency response advisor. This is an urgent situation. Respond with:
+
+  emergency: `You are the BC WildWatch emergency response advisor. This is an urgent situationin plain text only (no markdown or symbols such as ###, **, or *). Respond with:
 1. IMMEDIATE ACTIONS (what to do right now)
 2. SAFETY INSTRUCTIONS (stay/leave, keep distance, etc.)
 3. CONTACT INFO (who to call - security, emergency services)
 4. FOLLOW-UP (what to do after the immediate situation)
 
+Formatting rules:
+- Use normal sentences with full stops
+- Use line breaks between sections (\n)
+- Do not use symbols like *, **, #, or -
+- Do not use Markdown
+- Make use of bullet points for lists, use this •
+- Do not over use capitalization
+
 Use clear, direct language. Prioritize human safety.`,
+
   report: `You are the BC WildWatch incident response assistant. Your role is to help handle wildlife incidents on campus.
 
 For this incident report, please provide a response in this format:
@@ -47,7 +67,17 @@ Remember:
 - Be professional but reassuring
 - Prioritize human safety
 - Be specific about actions to take
-- Give clear contact information when needed`
+- Give clear contact information when needed
+- do not use markdown symbols such as ###, **, or *.
+- use \n for new lines
+
+Formatting rules:
+- Use normal sentences with full stops
+- Use line breaks between sections (\n)
+- Do not use symbols like *, **, #, or -
+- Do not use Markdown
+- Make use of bullet points for lists, use this •
+- Do not over use capitalization`
 };
 
 const chatBox = document.getElementById("chat-box");
@@ -183,6 +213,7 @@ function appendMessage(sender, text) {
   const messageDiv = document.createElement('div');
   messageDiv.className = sender;
   messageDiv.textContent = text;
+  messageDiv.style.whiteSpace = "pre-line";
   chatBox.appendChild(messageDiv);
   chatBox.scrollTop = chatBox.scrollHeight;
 }
