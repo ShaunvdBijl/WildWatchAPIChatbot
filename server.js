@@ -2,12 +2,24 @@ import express from 'express';
 import cors from 'cors';
 import fetch from 'node-fetch';
 import dotenv from 'dotenv';
+import path from 'path';
+import { fileURLToPath } from 'url';
+import fs from 'fs';
 
 dotenv.config();
 
 const app = express();
 app.use(cors());
 app.use(express.json());
+
+// Serve static frontend from ./public when present (for Render deployments)
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+const publicDir = path.join(__dirname, 'public');
+app.use(express.static(publicDir));
+const indexPath = path.join(publicDir, 'index.html');
+const hasFrontend = fs.existsSync(indexPath);
+console.log(`Frontend files ${hasFrontend ? 'found' : 'NOT found'} at ${publicDir}`);
 
 // Server configuration from environment variables
 const PORT = process.env.PORT || 3000;
@@ -73,8 +85,16 @@ app.get('/api/models', async (req, res) => {
   }
 });
 
-// Simple root/health endpoint to confirm the proxy is running
+// Serve the frontend index if present; otherwise expose a simple health string
 app.get('/', (req, res) => {
+  if (hasFrontend) {
+    return res.sendFile(indexPath, (err) => {
+      if (err) {
+        console.error('Error sending index.html', err);
+        res.status(500).send('WildWatch proxy running. Available: GET /api/models, POST /api/generate');
+      }
+    });
+  }
   res.send('WildWatch proxy running. Available: GET /api/models, POST /api/generate');
 });
 
