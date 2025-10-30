@@ -17,6 +17,20 @@ function getApiBase() {
   return API_BASE;
 }
 
+// Set environment banner so user can see which API base the client will call
+document.addEventListener('DOMContentLoaded', () => {
+  const envBanner = document.getElementById('env-banner');
+  if (!envBanner) return;
+  const apiBase = getApiBase();
+  const effectiveApi = apiBase || location.origin;
+  envBanner.textContent = `API base: ${effectiveApi}`;
+  if (effectiveApi.includes('localhost')) {
+    envBanner.classList.add('env-local');
+  } else {
+    envBanner.classList.add('env-remote');
+  }
+});
+
 // System messages to guide the AI's behavior
 const SYSTEM_MESSAGES = {
   general: "You are the BC WildWatch assistant, helping users with wildlife-related questions and concerns on campus. Be informative and safety-conscious.",

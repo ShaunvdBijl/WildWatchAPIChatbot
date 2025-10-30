@@ -12,13 +12,22 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-// Serve static frontend from ./public when present (for Render deployments)
+// Serve static frontend. Prefer ./public, but fall back to project root so
+// deployments that place assets at the repo root still work.
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
-const publicDir = path.join(__dirname, 'public');
-app.use(express.static(publicDir));
-const indexPath = path.join(publicDir, 'index.html');
-const hasFrontend = fs.existsSync(indexPath);
+let publicDir = path.join(__dirname, 'public');
+let indexPath = path.join(publicDir, 'index.html');
+let hasFrontend = fs.existsSync(indexPath);
+if (!hasFrontend) {
+  // Fallback: try serving from repository root (index.html may be at root)
+  publicDir = __dirname;
+  indexPath = path.join(publicDir, 'index.html');
+  hasFrontend = fs.existsSync(indexPath);
+}
+if (hasFrontend) {
+  app.use(express.static(publicDir));
+}
 console.log(`Frontend files ${hasFrontend ? 'found' : 'NOT found'} at ${publicDir}`);
 
 // Server configuration from environment variables
